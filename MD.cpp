@@ -17,13 +17,17 @@ struct particle{
 
 std::vector<particle> lattice_pos(int, float);
 void initialise(std::vector<particle>&, float, float);
+void force(std::vector<particle>&, float&);
 void print_particle_info(std::vector<particle>);
 float ranf();
 
 int main(){
     std::vector<particle> particles = lattice_pos(5, 1);
+    float energy = 0;
     initialise(particles, 273, 0.1);
+    force(particles, energy);
     print_particle_info(particles);
+    std::cout << "Energy = " << energy << std::endl;
     return 0;
 }
 
@@ -86,6 +90,39 @@ void initialise(std::vector<particle> &particles, float temp, float dt){
     for (particle &i : particles){
         i.velocities = {(i.velocities[0]-sumv)*fs, (i.velocities[1]-sumv)*fs, (i.velocities[2]-sumv)*fs};
         i.coordinates = {(i.coordinates[0] - i.velocities[0])*dt, (i.coordinates[1] - i.velocities[1])*dt, (i.coordinates[2] - i.velocities[2])*dt};
+    }
+}
+
+void force(std::vector<particle> &particles, float &energy){
+    int npart = particles.size();
+    std::vector<float> r;
+    std::vector<float> box = {10, 10, 10};
+    float r2;
+    float rc = 4.5;
+    float ecut = 4 * ((1/std::pow(rc, 12)) - (1/std::pow(rc, 6)));
+    for (int i = 0; i < npart-1; i++){
+        for (int j = i+1; j < npart; j++){
+            r[0] = particles[i].coordinates[0] - particles[j].coordinates[0];
+            r[1] = particles[i].coordinates[1] - particles[j].coordinates[1];
+            r[2] = particles[i].coordinates[2] - particles[j].coordinates[2];
+            r[0] -= box[0]*std::nearbyint(r[0]/box[0]);
+            r[1] -= box[1]*std::nearbyint(r[1]/box[1]);
+            r[2] -= box[2]*std::nearbyint(r[2]/box[2]);
+            r2 = r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
+            float rc2 = rc*rc;
+            if (r2 < rc2){
+                float r2i = 1/r2;
+                float r6i = std::pow(r2i, 3);
+                float ff = 48*r2i*r6i*(r6i-0.5);
+                particles[i].forces[0] += ff*r[0];
+                particles[i].forces[1] += ff*r[1];
+                particles[i].forces[2] += ff*r[2];
+                particles[j].forces[0] -= ff*r[0];
+                particles[j].forces[1] -= ff*r[1];
+                particles[j].forces[2] -= ff*r[2];
+                energy += 4*r6i*(r6i-1) - ecut;
+            }
+        }
     }
 }
 
