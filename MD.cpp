@@ -102,6 +102,7 @@ void force(std::vector<particle> &particles, float &energy){
     float ecut = 4 * ((1/std::pow(rc, 12)) - (1/std::pow(rc, 6)));
     for (int i = 0; i < npart-1; i++){
         for (int j = i+1; j < npart; j++){
+            r = {0, 0, 0};
             r[0] = particles[i].coordinates[0] - particles[j].coordinates[0];
             r[1] = particles[i].coordinates[1] - particles[j].coordinates[1];
             r[2] = particles[i].coordinates[2] - particles[j].coordinates[2];
